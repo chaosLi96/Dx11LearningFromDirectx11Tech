@@ -1,41 +1,24 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Linker files
+Debug/
+Release/
+x64/
+.git/
+.vs/
+.vscode/
+bin/
+build/
+backup/
+lib/
+vsxmake2022/
+*.cso
+*.mbo
+*.inc
 *.ilk
-
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
 *.lib
-
-# Executables
+*.iobj
+*.ipdb
+*.pdb
+*.exp
+*.lastcodeanalysissucceeded
+!dxtex.exe
 *.exe
-*.out
-*.app
-
-# debug information files
-*.dwo
+compile_commands.json
