@@ -1,64 +1,65 @@
 #include "DXTrace.h"
 #include <cstdio>
 
-HRESULT __stdcall DXTraceW(const WCHAR* strFile, DWORD dwLine, HRESULT hr, const WCHAR* strMsg, bool bPopMsgBox)
+HRESULT WINAPI DXTraceW(_In_z_ const WCHAR* strFile, _In_ DWORD dwLine, _In_ HRESULT hr,
+    _In_opt_ const WCHAR* strMsg, _In_ bool bPopMsgBox)
 {
-	WCHAR strBufferFile[MAX_PATH];
-	WCHAR strBufferLine[128];
-	WCHAR strBufferError[300];
-	WCHAR strBufferMsg[1024];
-	WCHAR strBufferHR[40];
-	WCHAR strBuffer[3000];
+    WCHAR strBufferFile[MAX_PATH];
+    WCHAR strBufferLine[128];
+    WCHAR strBufferError[300];
+    WCHAR strBufferMsg[1024];
+    WCHAR strBufferHR[40];
+    WCHAR strBuffer[3000];
 
-	swprintf_s(strBufferLine, 128, L"%lu", dwLine);
-	if (strFile)
-	{
-		swprintf_s(strBuffer, 3000, L"%ls(%ls): ", strFile, strBufferLine);
-		OutputDebugStringW(strBuffer);
-	}
+    swprintf_s(strBufferLine, 128, L"%lu", dwLine);
+    if (strFile)
+    {
+        swprintf_s(strBuffer, 3000, L"%ls(%ls): ", strFile, strBufferLine);
+        OutputDebugStringW(strBuffer);
+    }
 
-	size_t nMsgLen = (strMsg) ? wcsnlen_s(strMsg, 1024) : 0;
-	if (nMsgLen > 0)
-	{
-		OutputDebugStringW(strMsg);
-		OutputDebugStringW(L" ");
-	}
-	// Windows SDK 8.0ÆğDirectXµÄ´íÎóĞÅÏ¢ÒÑ¾­¼¯³É½ø´íÎóÂëÖĞ£¬¿ÉÒÔÍ¨¹ıFormatMessageW»ñÈ¡´íÎóĞÅÏ¢×Ö·û´®
-	// ²»ĞèÒª·ÖÅä×Ö·û´®ÄÚ´æ
-	FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-		nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		strBufferError, 256, nullptr);
+    size_t nMsgLen = (strMsg) ? wcsnlen_s(strMsg, 1024) : 0;
+    if (nMsgLen > 0)
+    {
+        OutputDebugStringW(strMsg);
+        OutputDebugStringW(L" ");
+    }
+    // Windows SDK 8.0èµ·DirectXçš„é”™è¯¯ä¿¡æ¯å·²ç»é›†æˆè¿›é”™è¯¯ç ä¸­ï¼Œå¯ä»¥é€šè¿‡FormatMessageWè·å–é”™è¯¯ä¿¡æ¯å­—ç¬¦ä¸²
+    // ä¸éœ€è¦åˆ†é…å­—ç¬¦ä¸²å†…å­˜
+    FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        strBufferError, 256, nullptr);
 
-	WCHAR* errorStr = wcsrchr(strBufferError, L'\r');
-	if (errorStr)
-	{
-		errorStr[0] = L'\0';    // ²Á³ıFormatMessageW´øÀ´µÄ»»ĞĞ·û(°Ñ\r\nµÄ\rÖÃ»»Îª\0¼´¿É)
-	}
+    WCHAR* errorStr = wcsrchr(strBufferError, L'\r');
+    if (errorStr)
+    {
+        errorStr[0] = L'\0';    // æ“¦é™¤FormatMessageWå¸¦æ¥çš„æ¢è¡Œç¬¦(æŠŠ\r\nçš„\rç½®æ¢ä¸º\0å³å¯)
+    }
 
-	swprintf_s(strBufferHR, 40, L" (0x%0.8x)", hr);
-	wcscat_s(strBufferError, strBufferHR);
-	swprintf_s(strBuffer, 3000, L"´íÎóÂëº¬Òå£º%ls", strBufferError);
-	OutputDebugStringW(strBuffer);
+    swprintf_s(strBufferHR, 40, L" (0x%0.8x)", hr);
+    wcscat_s(strBufferError, strBufferHR);
+    swprintf_s(strBuffer, 3000, L"é”™è¯¯ç å«ä¹‰ï¼š%ls", strBufferError);
+    OutputDebugStringW(strBuffer);
 
-	OutputDebugStringW(L"\n");
+    OutputDebugStringW(L"\n");
 
-	if (bPopMsgBox)
-	{
-		wcscpy_s(strBufferFile, MAX_PATH, L"");
-		if (strFile)
-			wcscpy_s(strBufferFile, MAX_PATH, strFile);
+    if (bPopMsgBox)
+    {
+        wcscpy_s(strBufferFile, MAX_PATH, L"");
+        if (strFile)
+            wcscpy_s(strBufferFile, MAX_PATH, strFile);
 
-		wcscpy_s(strBufferMsg, 1024, L"");
-		if (nMsgLen > 0)
-			swprintf_s(strBufferMsg, 1024, L"µ±Ç°µ÷ÓÃ£º%ls\n", strMsg);
+        wcscpy_s(strBufferMsg, 1024, L"");
+        if (nMsgLen > 0)
+            swprintf_s(strBufferMsg, 1024, L"å½“å‰è°ƒç”¨ï¼š%ls\n", strMsg);
 
-		swprintf_s(strBuffer, 3000, L"ÎÄ¼şÃû£º%ls\nĞĞºÅ£º%ls\n´íÎóÂëº¬Òå£º%ls\n%lsÄúĞèÒªµ÷ÊÔµ±Ç°Ó¦ÓÃ³ÌĞòÂğ£¿",
-			strBufferFile, strBufferLine, strBufferError, strBufferMsg);
+        swprintf_s(strBuffer, 3000, L"æ–‡ä»¶åï¼š%ls\nè¡Œå·ï¼š%ls\né”™è¯¯ç å«ä¹‰ï¼š%ls\n%lsæ‚¨éœ€è¦è°ƒè¯•å½“å‰åº”ç”¨ç¨‹åºå—ï¼Ÿ",
+            strBufferFile, strBufferLine, strBufferError, strBufferMsg);
 
-		int nResult = MessageBoxW(GetForegroundWindow(), strBuffer, L"´íÎó", MB_YESNO | MB_ICONERROR);
-		if (nResult == IDYES)
-			DebugBreak();
-	}
+        int nResult = MessageBoxW(GetForegroundWindow(), strBuffer, L"é”™è¯¯", MB_YESNO | MB_ICONERROR);
+        if (nResult == IDYES)
+            DebugBreak();
+    }
 
-	return hr;
+    return hr;
 }

@@ -1,32 +1,36 @@
-#pragma once
+//***************************************************************************************
+// DXTrace.h by X_Jun(MKXJun) (C) 2018-2022 All Rights Reserved.
+// Licensed under the MIT License.
+//
+// DirectXé”™è¯¯è¿½è¸ª 
+// DirectX Error Tracing. 
+//***************************************************************************************
 
-//#include""WinMin.h"
+#ifndef DXTRACE_H
+#define DXTRACE_H
 
-#include<Windows.h>
-
-// ------------------------------
-// ÔÚµ÷ÊÔÊä³ö´°¿ÚÖĞÊä³ö¸ñÊ½»¯´íÎóĞÅÏ¢£¬¿ÉÑ¡µÄ´íÎó´°¿Úµ¯³ö(ÒÑºº»¯)
-// [In]strFile			µ±Ç°ÎÄ¼şÃû£¬Í¨³£´«µİºê__FILEW__
-// [In]hlslFileName     µ±Ç°ĞĞºÅ£¬Í¨³£´«µİºê__LINE__
-// [In]hr				º¯ÊıÖ´ĞĞ³öÏÖÎÊÌâÊ±·µ»ØµÄHRESULTÖµ
-// [In]strMsg			ÓÃÓÚ°ïÖúµ÷ÊÔ¶¨Î»µÄ×Ö·û´®£¬Í¨³£´«µİL#x(¿ÉÄÜÎªNULL)
-// [In]bPopMsgBox       Èç¹ûÎªTRUE£¬Ôòµ¯³öÒ»¸öÏûÏ¢µ¯´°¸æÖª´íÎóĞÅÏ¢
-// ·µ»ØÖµ: ĞÎ²Îhr
-
-HRESULT WINAPI DXTraceW(
-	_In_z_ const WCHAR* strFile, 
-	_In_ DWORD dwLine, 
-	_In_ HRESULT hr, 
-	_In_opt_ const WCHAR* strMsg, 
-	_In_ bool bPopMsgBox);
+#include <Windows.h>
 
 // ------------------------------
-// HRºê
+// DXTraceWå‡½æ•°
 // ------------------------------
-// DebugÄ£Ê½ÏÂµÄ´íÎóÌáĞÑÓë×·×Ù
+// åœ¨è°ƒè¯•è¾“å‡ºçª—å£ä¸­è¾“å‡ºæ ¼å¼åŒ–é”™è¯¯ä¿¡æ¯ï¼Œå¯é€‰çš„é”™è¯¯çª—å£å¼¹å‡º(å·²æ±‰åŒ–)
+// [In]strFile			å½“å‰æ–‡ä»¶åï¼Œé€šå¸¸ä¼ é€’å®__FILEW__
+// [In]hlslFileName     å½“å‰è¡Œå·ï¼Œé€šå¸¸ä¼ é€’å®__LINE__
+// [In]hr				å‡½æ•°æ‰§è¡Œå‡ºç°é—®é¢˜æ—¶è¿”å›çš„HRESULTå€¼
+// [In]strMsg			ç”¨äºå¸®åŠ©è°ƒè¯•å®šä½çš„å­—ç¬¦ä¸²ï¼Œé€šå¸¸ä¼ é€’L#x(å¯èƒ½ä¸ºNULL)
+// [In]bPopMsgBox       å¦‚æœä¸ºTRUEï¼Œåˆ™å¼¹å‡ºä¸€ä¸ªæ¶ˆæ¯å¼¹çª—å‘ŠçŸ¥é”™è¯¯ä¿¡æ¯
+// è¿”å›å€¼: å½¢å‚hr
+HRESULT WINAPI DXTraceW(_In_z_ const WCHAR* strFile, _In_ DWORD dwLine, _In_ HRESULT hr, _In_opt_ const WCHAR* strMsg, _In_ bool bPopMsgBox);
+
+
+// ------------------------------
+// HRå®
+// ------------------------------
+// Debugæ¨¡å¼ä¸‹çš„é”™è¯¯æé†’ä¸è¿½è¸ª
 #if defined(DEBUG) | defined(_DEBUG)
-#ifndef HR
-#define HR(x)												\
+    #ifndef HR
+    #define HR(x)												\
     {															\
         HRESULT hr = (x);										\
         if(FAILED(hr))											\
@@ -34,9 +38,13 @@ HRESULT WINAPI DXTraceW(
             DXTraceW(__FILEW__, (DWORD)__LINE__, hr, L#x, true);\
         }														\
     }
-#endif
+    #endif
 #else
-#ifndef HR
-#define HR(x) (x)
-#endif 
+    #ifndef HR
+    #define HR(x) (x)
+    #endif 
+#endif
+
+
+
 #endif

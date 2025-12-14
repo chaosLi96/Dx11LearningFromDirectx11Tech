@@ -1,28 +1,39 @@
+//***************************************************************************************
+// CpuTimer.h by Frank Luna (C) 2011 All Rights Reserved.
+// Modify name from GameTimer.cpp
+// CPUè®¡æ—¶å™¨
+//***************************************************************************************
+
 #pragma once
+
+#ifndef CPU_TIMER_H
+#define CPU_TIMER_H
+
 class CpuTimer
 {
 public:
-	CpuTimer();
+    CpuTimer();
+ 
+    float TotalTime()const;     // è¿”å›ä»Reset()è°ƒç”¨ä¹‹åç»è¿‡çš„æ—¶é—´ï¼Œä½†ä¸åŒ…æ‹¬æš‚åœæœŸé—´çš„
+    float DeltaTime()const;     // è¿”å›å¸§é—´éš”æ—¶é—´
 
-	float TotalTime() const; //·µ»Ø´ÓReset()µ÷ÓÃÖ®ºó¾­¹ıµÄÊ±¼ä£¬²»°üÀ¨ÔİÍ£ÆÚ¼äµÄ
-	float DeltaTime() const; //·µ»ØÖ¡¼ä¸ôÊ±¼ä
-
-	void Reset(); //ÖØÖÃ¼ÆÊ±Æ÷
-	void Start(); //¿ªÊ¼¼ÆÊ±Æ÷
-	void Stop(); //Í£Ö¹¼ÆÊ±Æ÷
-	void Tick(); //Ã¿Ò»Ö¡¿ªÊ¼µÄÊ±ºòµ÷ÓÃ
-	bool IsStopped() const ; //¼ì²é¼ÆÊ±Æ÷ÊÇ·ñÍ£Ö¹
-
+    void Reset();               // è®¡æ—¶å¼€å§‹å‰æˆ–è€…éœ€è¦é‡ç½®æ—¶è°ƒç”¨
+    void Start();               // åœ¨å¼€å§‹è®¡æ—¶æˆ–å–æ¶ˆæš‚åœçš„æ—¶å€™è°ƒç”¨
+    void Stop();                // åœ¨éœ€è¦æš‚åœçš„æ—¶å€™è°ƒç”¨
+    void Tick();                // åœ¨æ¯ä¸€å¸§å¼€å§‹çš„æ—¶å€™è°ƒç”¨
+    bool IsStopped() const;     // è®¡æ—¶å™¨æ˜¯å¦æš‚åœ/ç»“æŸ
 
 private:
-	double m_SecondsPerCount = 0.0;
-	double m_DeltaTime = 0.0;
+    double m_SecondsPerCount = 0.0;
+    double m_DeltaTime = -1.0;
 
-	__int64 m_BaseTime = 0;
-	__int64 m_PausedTime = 0;
-	__int64 m_StopTime = 0;
-	__int64 m_PrevTime = 0;
-	__int64 m_CurrTime = 0;
+    __int64 m_BaseTime = 0;
+    __int64 m_PausedTime = 0;
+    __int64 m_StopTime = 0;
+    __int64 m_PrevTime = 0;
+    __int64 m_CurrTime = 0;
 
-	bool m_Stopped = false;
+    bool m_Stopped = false;
 };
+
+#endif // GAMETIMER_H
