@@ -1,0 +1,80 @@
+@startuml 窗口消息处理状态图
+!theme cerulean-outline
+skinparam defaultFontName Microsoft YaHei
+skinparam backgroundColor #FEFEFE
+
+title Windows 消息处理状态机
+
+[*] --> 运行中 : 程序启动
+
+state 运行中 {
+  state "应用活跃" as Active {
+    Active : m_AppPaused = false
+    Active : 执行游戏逻辑
+    Active : 渲染场景
+  }
+  
+  state "应用暂停" as Paused {
+    Paused : m_AppPaused = true
+    Paused : 不更新游戏逻辑
+    Paused : 不渲染场景
+    Paused : Sleep(100) 节省 CPU
+  }
+  
+  state "窗口最小化" as Minimized {
+    Minimized : m_Minimized = true
+    Minimized : m_AppPaused = true
+  }
+  
+  state "窗口最大化" as Maximized {
+    Maximized : m_Maximized = true
+    Maximized : m_AppPaused = false
+    Maximized --> Active : OnResize()
+  }
+  
+  state "正在调整大小" as Resizing {
+    Resizing : m_Resizing = true
+    Resizing : m_AppPaused = true
+    Resizing : 暂停更新和渲染
+  }
+  
+  [*] --> Active
+  
+  Active --> Paused : WM_ACTIVATE\n(失活)
+  Paused --> Active : WM_ACTIVATE\n(激活)
+  
+  Active --> Minimized : WM_SIZE\n(SIZE_MINIMIZED)
+  Minimized --> Active : WM_SIZE\n(SIZE_RESTORED)
+  
+  Active --> Maximized : WM_SIZE\n(SIZE_MAXIMIZED)
+  Maximized --> Active : WM_SIZE\n(SIZE_RESTORED)
+  
+  Active --> Resizing : WM_ENTERSIZEMOVE\n(开始拖动)
+  Resizing --> Active : WM_EXITSIZEMOVE\n(结束拖动)\n+ OnResize()
+}
+
+运行中 --> [*] : WM_DESTROY\nPostQuitMessage(0)
+
+note right of Active
+  **活跃状态行为：**
+  • 计时器运行
+  • UpdateScene(dt)
+  • DrawScene()
+  • CalculateFrameStats()
+end note
+
+note right of Paused
+  **暂停状态行为：**
+  • 计时器停止
+  • 跳过更新和渲染
+  • 降低 CPU 占用
+end note
+
+note bottom of Resizing
+  **调整大小时：**
+  • 暂停更新以避免频繁重建资源
+  • 完成后调用 OnResize() 一次
+  • 重建渲染目标和深度缓冲区
+end note
+
+@enduml

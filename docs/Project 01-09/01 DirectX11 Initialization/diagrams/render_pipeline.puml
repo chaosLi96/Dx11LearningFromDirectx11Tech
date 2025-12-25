@@ -1,0 +1,129 @@
+@startuml 渲染管线架构图
+!theme cerulean-outline
+skinparam defaultFontName Microsoft YaHei
+skinparam backgroundColor #FEFEFE
+skinparam componentBackgroundColor #E1F5FE
+skinparam componentBorderColor #0277BD
+
+title Direct3D 11 渲染管线架构（本章涉及部分）
+
+package "应用程序层" {
+  [GameApp::DrawScene()] as DrawScene
+}
+
+package "Direct3D 11 设备层" {
+  [ID3D11Device\n设备对象] as Device
+  [ID3D11DeviceContext\n设备上下文] as Context
+}
+
+package "DXGI 层" {
+  [IDXGISwapChain\n交换链] as SwapChain
+  [后备缓冲区\nBackBuffer] as BackBuffer
+}
+
+package "渲染管线阶段" {
+  
+  component "输入装配器 (IA)" as IA {
+    note left
+      Input Assembler
+      组装顶点和索引
+      (本章未使用)
+    end note
+  }
+  
+  component "顶点着色器 (VS)" as VS {
+    note left
+      Vertex Shader
+      处理每个顶点
+      (本章未使用)
+    end note
+  }
+  
+  component "几何着色器 (GS)" as GS {
+    note left
+      Geometry Shader
+      可选阶段
+      (本章未使用)
+    end note
+  }
+  
+  component "光栅化 (RS)" as RS {
+    note right
+      Rasterizer Stage
+      **本章设置：视口**
+      将3D图元转换为像素
+    end note
+  }
+  
+  component "像素着色器 (PS)" as PS {
+    note right
+      Pixel Shader
+      计算每个像素颜色
+      (本章未使用)
+    end note
+  }
+  
+  component "输出合并器 (OM)" as OM {
+    note right
+      Output Merger
+      **本章设置：**
+      • 渲染目标视图
+      • 深度模板视图
+    end note
+  }
+}
+
+package "渲染资源" {
+  [ID3D11RenderTargetView\n渲染目标视图] as RTV
+  [ID3D11DepthStencilView\n深度模板视图] as DSV
+  [ID3D11Texture2D\n深度模板缓冲区] as DepthBuffer
+  [D3D11_VIEWPORT\n视口] as Viewport
+}
+
+' 连接关系
+DrawScene --> Context : 调用渲染命令
+
+Context -down-> IA : 设置顶点/索引
+IA -down-> VS : 传递顶点数据
+VS -down-> GS : 传递变换后的顶点
+GS -down-> RS : 传递图元
+RS -down-> PS : 生成像素片段
+PS -down-> OM : 输出像素颜色
+
+Context -right-> RS : RSSetViewports()
+Context -right-> OM : OMSetRenderTargets()
+
+OM -down-> RTV : 写入颜色
+OM -down-> DSV : 深度/模板测试
+
+RTV -down-> BackBuffer : 指向
+DSV --> DepthBuffer : 指向
+
+Device .up.> RTV : CreateRenderTargetView()
+Device .up.> DSV : CreateDepthStencilView()
+Device .up.> DepthBuffer : CreateTexture2D()
+
+SwapChain --> BackBuffer : 管理
+SwapChain .up.> Context : Present()\n呈现结果
+
+note right of Context
+  **本章使用的操作：**
+  • ClearRenderTargetView()
+    清空渲染目标为指定颜色
+  • ClearDepthStencilView()
+    清空深度和模板缓冲区
+  • OMSetRenderTargets()
+    绑定渲染目标和深度视图
+  • RSSetViewports()
+    设置视口变换
+end note
+
+note bottom of SwapChain
+  **交换链操作：**
+  • GetBuffer() - 获取后备缓冲区
+  • ResizeBuffers() - 调整缓冲区大小
+  • Present() - 呈现渲染结果
+    （交换前后缓冲区）
+end note
+
+@enduml

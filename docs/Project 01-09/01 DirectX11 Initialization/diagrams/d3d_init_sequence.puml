@@ -1,0 +1,215 @@
+@startuml Direct3D初始化详细流程
+!theme cerulean-outline
+skinparam defaultFontName Microsoft YaHei
+skinparam backgroundColor #FEFEFE
+
+title Direct3D 初始化详细流程
+
+participant "InitDirect3D()" as Init
+participant "D3D11CreateDevice" as CreateDevice
+participant "ID3D11Device" as Device
+participant "IDXGIFactory" as Factory
+participant "IDXGISwapChain" as SwapChain
+participant "ID3D11Texture2D" as Texture
+participant "渲染管线" as Pipeline
+
+== 第一步：创建 D3D11 设备 ==
+Init -> Init : 设置创建标志
+note right
+  DEBUG 模式添加：
+  D3D11_CREATE_DEVICE_DEBUG
+end note
+
+Init -> Init : 准备驱动类型数组
+note right
+  1. D3D_DRIVER_TYPE_HARDWARE (硬件加速)
+  2. D3D_DRIVER_TYPE_WARP (软件模拟高性能)
+  3. D3D_DRIVER_TYPE_REFERENCE (软件参考实现)
+end note
+
+Init -> Init : 准备特性等级数组
+note right
+  1. D3D_FEATURE_LEVEL_11_1
+  2. D3D_FEATURE_LEVEL_11_0
+end note
+
+loop 遍历驱动类型
+  Init -> CreateDevice : D3D11CreateDevice()
+  note right
+    参数：
+    - 适配器 (nullptr = 默认)
+    - 驱动类型
+    - 创建标志
+    - 特性等级数组
+    - SDK 版本
+  end note
+  
+  alt 创建成功
+    CreateDevice --> Init : 返回设备、上下文和特性等级
+    Init -> Device ** : 创建成功
+    Init -> Init : m_pd3dDevice\nm_pd3dImmediateContext
+    note right
+      ID3D11Device: 创建资源
+      ID3D11DeviceContext: 渲染操作
+    end note
+  else E_INVALIDARG (不支持 11.1)
+    Init -> CreateDevice : 重试仅 11.0 特性等级
+  else 其他错误
+    Init -> Init : 尝试下一个驱动类型
+  end
+end
+
+== 第二步：检查 MSAA 支持 ==
+Init -> Device : CheckMultisampleQualityLevels()
+note right
+  格式：DXGI_FORMAT_R8G8B8A8_UNORM
+  采样数：4
+  返回：质量等级数量
+end note
+Device --> Init : m_4xMsaaQuality
+
+== 第三步：获取 DXGI 接口 ==
+Init -> Device : QueryInterface(IDXGIDevice)
+Device --> Init : dxgiDevice
+
+Init -> Init : dxgiDevice->GetAdapter()
+note right
+  获取创建设备的显卡适配器
+end note
+
+Init -> Init : dxgiAdapter->GetParent(IDXGIFactory1)
+note right
+  获取 DXGI 工厂
+  必须使用同一个工厂创建交换链
+  否则会报错！
+end note
+
+Init -> Init : 尝试 QueryInterface(IDXGIFactory2)
+note right
+  检查是否支持 D3D11.1
+end note
+
+== 第四步：创建交换链 ==
+alt 支持 D3D11.1 (IDXGIFactory2)
+  Init -> Init : 填充 DXGI_SWAP_CHAIN_DESC1
+  note right
+    Width, Height: 窗口大小
+    Format: DXGI_FORMAT_R8G8B8A8_UNORM
+    SampleDesc: MSAA 设置
+    BufferUsage: RENDER_TARGET_OUTPUT
+    BufferCount: 1
+    SwapEffect: DISCARD
+  end note
+  
+  Init -> Init : 填充全屏描述符 (Windowed = TRUE)
+  
+  Init -> Factory : CreateSwapChainForHwnd()
+  note right
+    参数：
+    - D3D11 设备
+    - 窗口句柄
+    - 交换链描述符
+    - 全屏描述符
+  end note
+  Factory --> Init : m_pSwapChain1
+  
+else 仅支持 D3D11.0 (IDXGIFactory1)
+  Init -> Init : 填充 DXGI_SWAP_CHAIN_DESC
+  note right
+    BufferDesc: 包含分辨率和刷新率
+    SampleDesc: MSAA 设置
+    OutputWindow: 窗口句柄
+    Windowed: TRUE
+  end note
+  
+  Init -> Factory : CreateSwapChain()
+  Factory --> Init : m_pSwapChain
+end
+
+Init -> Factory : MakeWindowAssociation()
+note right
+  禁用：
+  DXGI_MWA_NO_ALT_ENTER (禁止 Alt+Enter)
+  DXGI_MWA_NO_WINDOW_CHANGES
+end note
+
+== 第五步：调用 OnResize() 创建渲染资源 ==
+Init -> Init : OnResize()
+
+group OnResize() - 创建渲染目标视图
+  Init -> Init : 释放旧的渲染目标和深度视图
+  
+  Init -> SwapChain : ResizeBuffers()
+  note right
+    调整后备缓冲区大小
+    格式：R8G8B8A8_UNORM
+  end note
+  
+  Init -> SwapChain : GetBuffer(0)
+  SwapChain --> Init : backBuffer (ID3D11Texture2D)
+  
+  Init -> Device : CreateRenderTargetView(backBuffer)
+  Device --> Init : m_pRenderTargetView
+  note right
+    创建渲染目标视图
+    用于向后备缓冲区渲染
+  end note
+end
+
+group OnResize() - 创建深度模板缓冲区
+  Init -> Init : 填充 D3D11_TEXTURE2D_DESC
+  note right
+    Width, Height: 窗口大小
+    Format: D24_UNORM_S8_UINT
+    (24位深度 + 8位模板)
+    SampleDesc: 匹配 MSAA 设置
+    BindFlags: DEPTH_STENCIL
+  end note
+  
+  Init -> Device : CreateTexture2D()
+  Device --> Init : m_pDepthStencilBuffer (Texture2D)
+  
+  Init -> Device : CreateDepthStencilView()
+  Device --> Init : m_pDepthStencilView
+  note right
+    创建深度模板视图
+    用于深度测试和模板测试
+  end note
+end
+
+group OnResize() - 绑定到渲染管线
+  Init -> Pipeline : OMSetRenderTargets()
+  note right
+    输出合并阶段 (Output Merger)
+    绑定：
+    - 渲染目标视图 (颜色输出)
+    - 深度模板视图 (深度/模板测试)
+  end note
+  
+  Init -> Init : 设置视口 (D3D11_VIEWPORT)
+  note right
+    TopLeftX, TopLeftY = 0
+    Width, Height = 窗口大小
+    MinDepth = 0.0, MaxDepth = 1.0
+  end note
+  
+  Init -> Pipeline : RSSetViewports()
+  note right
+    光栅化阶段 (Rasterizer Stage)
+    定义渲染区域
+  end note
+end
+
+Init --> Init : Direct3D 初始化完成
+
+note over Init
+  **关键对象创建完成：**
+  ✓ ID3D11Device (设备)
+  ✓ ID3D11DeviceContext (设备上下文)
+  ✓ IDXGISwapChain (交换链)
+  ✓ ID3D11RenderTargetView (渲染目标视图)
+  ✓ ID3D11DepthStencilView (深度模板视图)
+  ✓ D3D11_VIEWPORT (视口)
+end note
+
+@enduml

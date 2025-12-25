@@ -1,0 +1,157 @@
+@startuml 游戏主循环时序图
+!theme cerulean-outline
+skinparam defaultFontName Microsoft YaHei
+skinparam backgroundColor #FEFEFE
+skinparam sequenceBoxBackgroundColor #E8EAF6
+skinparam sequenceLifeLineBackgroundColor #C5CAE9
+
+title DirectX11 初始化 - 游戏主循环时序图
+
+actor User as "用户"
+participant "WinMain" as Main
+participant "GameApp" as App
+participant "D3DApp::Run()" as Run
+participant "CpuTimer" as Timer
+participant "Windows\n消息队列" as MsgQueue
+participant "D3DApp::MsgProc" as MsgProc
+
+== 初始化阶段 ==
+Main -> App ** : 创建 GameApp 对象
+Main -> App : Init()
+activate App
+App -> App : 初始化窗口和 Direct3D
+return 初始化成功
+
+== 主循环阶段 ==
+Main -> Run : Run()
+activate Run
+
+Run -> Timer : Reset()
+note right
+  重置计时器
+  开始计时
+end note
+
+loop 游戏主循环 (直到收到 WM_QUIT)
+  
+  Run -> MsgQueue : PeekMessage()
+  
+  alt 有 Windows 消息
+    MsgQueue --> Run : 返回消息
+    
+    alt 收到 WM_QUIT
+      Run -> Main : 退出循环
+      note right: 返回 wParam
+    else 其他消息
+      Run -> Run : TranslateMessage()
+      Run -> MsgProc : DispatchMessage()
+      activate MsgProc
+      
+      alt WM_ACTIVATE 消息
+        User -> MsgProc : 窗口激活/失活
+        alt 窗口失活
+          MsgProc -> Timer : Stop()
+          MsgProc -> MsgProc : m_AppPaused = true
+        else 窗口激活
+          MsgProc -> Timer : Start()
+          MsgProc -> MsgProc : m_AppPaused = false
+        end
+        
+      else WM_SIZE 消息
+        User -> MsgProc : 调整窗口大小
+        alt 最小化
+          MsgProc -> MsgProc : m_Minimized = true\nm_AppPaused = true
+        else 最大化/还原
+          MsgProc -> App : OnResize()
+          activate App
+          App -> App : 重建渲染目标\n重建深度缓冲区
+          return
+        end
+        
+      else WM_ENTERSIZEMOVE 消息
+        User -> MsgProc : 开始拖动窗口
+        MsgProc -> Timer : Stop()
+        MsgProc -> MsgProc : m_Resizing = true\nm_AppPaused = true
+        
+      else WM_EXITSIZEMOVE 消息
+        User -> MsgProc : 结束拖动窗口
+        MsgProc -> Timer : Start()
+        MsgProc -> App : OnResize()
+        MsgProc -> MsgProc : m_Resizing = false\nm_AppPaused = false
+        
+      else WM_DESTROY 消息
+        MsgProc -> MsgQueue : PostQuitMessage(0)
+        note right: 发送 WM_QUIT 消息
+        
+      else 其他消息
+        MsgProc -> MsgProc : DefWindowProc()
+      end
+      
+      deactivate MsgProc
+    end
+    
+  else 没有消息 (空闲时间)
+    
+    Run -> Timer : Tick()
+    note right
+      更新时间
+      计算帧间隔 DeltaTime
+    end note
+    
+    alt 应用未暂停
+      Run -> Timer : DeltaTime()
+      Timer --> Run : dt (帧间隔时间)
+      
+      Run -> Run : CalculateFrameStats()
+      note right
+        每秒更新一次
+        显示 FPS 和 Frame Time
+      end note
+      
+      Run -> App : UpdateScene(dt)
+      activate App
+      note right of App
+        更新游戏逻辑
+        当前示例为空
+      end note
+      return
+      
+      Run -> App : DrawScene()
+      activate App
+      
+      App -> App : ClearRenderTargetView()
+      note right
+        清空渲染目标为蓝色
+        RGBA = (0, 0, 255, 255)
+      end note
+      
+      App -> App : ClearDepthStencilView()
+      note right
+        清空深度模板缓冲区
+        深度 = 1.0, 模板 = 0
+      end note
+      
+      App -> App : SwapChain->Present()
+      note right
+        呈现渲染结果
+        交换前后缓冲区
+      end note
+      
+      return
+      
+    else 应用已暂停
+      Run -> Run : Sleep(100)
+      note right
+        暂停时降低 CPU 占用
+      end note
+    end
+    
+  end
+  
+end
+
+deactivate Run
+
+Main -> Main : 返回退出代码
+
+@enduml

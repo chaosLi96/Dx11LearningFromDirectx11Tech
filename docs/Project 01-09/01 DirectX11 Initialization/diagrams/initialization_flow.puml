@@ -1,0 +1,208 @@
+@startuml 程序初始化流程
+!theme cerulean-outline
+skinparam defaultFontName Microsoft YaHei
+skinparam backgroundColor #FEFEFE
+skinparam ActivityBackgroundColor #E3F2FD
+skinparam ActivityBorderColor #1976D2
+skinparam ActivityDiamondBackgroundColor #FFF9C4
+skinparam ActivityDiamondBorderColor #F57F17
+
+title DirectX11 初始化 - 程序启动流程图
+
+start
+
+:WinMain 入口函数;
+note right
+  应用程序入口点
+  参数：hInstance, cmdLine 等
+end note
+
+if (DEBUG 模式?) then (是)
+  :启用内存泄漏检测;
+  note right
+    _CrtSetDbgFlag()
+    检测内存分配和泄漏
+  end note
+endif
+
+:创建 GameApp 对象;
+note right
+  GameApp theApp(hInstance, 
+    L"DirectX11 Initialization",
+    1280, 720);
+end note
+
+partition "GameApp::Init()" {
+  :调用 D3DApp::Init();
+  
+  partition "D3DApp::Init()" {
+    :调用 InitMainWindow();
+    
+    partition "InitMainWindow()" {
+      :注册窗口类 (WNDCLASS);
+      note right
+        设置窗口过程函数
+        设置图标、光标等
+      end note
+      
+      :计算窗口矩形大小;
+      note right
+        AdjustWindowRect()
+        根据客户区大小计算
+        完整窗口大小
+      end note
+      
+      :创建窗口 (CreateWindow);
+      
+      if (窗口创建成功?) then (否)
+        #FFB6C1:返回 false;
+        stop
+      endif
+      
+      :显示窗口 (ShowWindow);
+      :更新窗口 (UpdateWindow);
+    }
+    
+    if (窗口初始化成功?) then (否)
+      #FFB6C1:返回 false;
+      stop
+    endif
+    
+    :调用 InitDirect3D();
+    
+    partition "InitDirect3D()" {
+      :设置设备创建标志;
+      note right
+        DEBUG 模式添加
+        D3D11_CREATE_DEVICE_DEBUG
+      end note
+      
+      :准备驱动类型数组;
+      note right
+        HARDWARE -> WARP -> REFERENCE
+      end note
+      
+      :准备特性等级数组;
+      note right
+        D3D_FEATURE_LEVEL_11_1
+        D3D_FEATURE_LEVEL_11_0
+      end note
+      
+      repeat
+        :尝试创建 D3D11 设备;
+        note right
+          D3D11CreateDevice()
+          创建设备和设备上下文
+        end note
+      repeat while (所有驱动类型尝试完?) is (否)
+      ->是;
+      
+      if (设备创建成功?) then (否)
+        #FFB6C1:显示错误消息;
+        #FFB6C1:返回 false;
+        stop
+      endif
+      
+      if (特性等级 >= 11.0?) then (否)
+        #FFB6C1:不支持 Direct3D 11;
+        #FFB6C1:返回 false;
+        stop
+      endif
+      
+      :检查 MSAA 质量支持;
+      note right
+        CheckMultisampleQualityLevels()
+        检查 4xMSAA 支持
+      end note
+      
+      :获取 DXGI 接口;
+      note right
+        通过 Device -> Adapter -> Factory
+        获取 IDXGIFactory1/2
+      end note
+      
+      if (支持 D3D11.1?) then (是)
+        :创建 DXGI 1.2 交换链;
+        note right
+          使用 IDXGIFactory2
+          CreateSwapChainForHwnd()
+        end note
+      else (否)
+        :创建 DXGI 1.1 交换链;
+        note right
+          使用 IDXGIFactory1
+          CreateSwapChain()
+        end note
+      endif
+      
+      :禁用 Alt+Enter 全屏切换;
+      note right
+        MakeWindowAssociation()
+        DXGI_MWA_NO_ALT_ENTER
+      end note
+      
+      :设置调试对象名称;
+      note right
+        便于图形调试器识别
+      end note
+      
+      :调用 OnResize();
+      
+      partition "OnResize()" {
+        :释放旧的渲染目标视图;
+        :释放旧的深度模板视图;
+        
+        :调整交换链缓冲区大小;
+        note right
+          ResizeBuffers()
+        end note
+        
+        :获取后备缓冲区;
+        :创建渲染目标视图;
+        note right
+          CreateRenderTargetView()
+        end note
+        
+        :创建深度模板缓冲区;
+        note right
+          CreateTexture2D()
+          格式：D24_UNORM_S8_UINT
+        end note
+        
+        :创建深度模板视图;
+        note right
+          CreateDepthStencilView()
+        end note
+        
+        :绑定渲染目标到管线;
+        note right
+          OMSetRenderTargets()
+        end note
+        
+        :设置视口;
+        note right
+          RSSetViewports()
+        end note
+      }
+    }
+    
+    if (D3D 初始化成功?) then (否)
+      #FFB6C1:返回 false;
+      stop
+    endif
+  }
+}
+
+if (GameApp 初始化成功?) then (否)
+  #FFB6C1:程序退出;
+  stop
+endif
+
+:调用 theApp.Run();
+note right
+  进入游戏主循环
+end note
+
+stop
+
+@enduml

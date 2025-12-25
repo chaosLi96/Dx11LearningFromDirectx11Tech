@@ -1,0 +1,149 @@
+@startuml 类图
+!theme cerulean-outline
+skinparam defaultFontName Microsoft YaHei
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #E8F5E9
+skinparam classBorderColor #388E3C
+skinparam ArrowColor #1976D2
+
+title DirectX11 初始化项目 - 类图结构
+
+' 核心应用框架类
+class D3DApp {
+    {field} # m_hAppInst : HINSTANCE
+    {field} # m_hMainWnd : HWND
+    {field} # m_AppPaused : bool
+    {field} # m_Minimized : bool
+    {field} # m_Maximized : bool
+    {field} # m_Resizing : bool
+    {field} # m_Enable4xMsaa : bool
+    {field} # m_4xMsaaQuality : UINT
+    {field} # m_Timer : CpuTimer
+    {field} # m_pd3dDevice : ComPtr<ID3D11Device>
+    {field} # m_pd3dImmediateContext : ComPtr<ID3D11DeviceContext>
+    {field} # m_pSwapChain : ComPtr<IDXGISwapChain>
+    {field} # m_pd3dDevice1 : ComPtr<ID3D11Device1>
+    {field} # m_pd3dImmediateContext1 : ComPtr<ID3D11DeviceContext1>
+    {field} # m_pSwapChain1 : ComPtr<IDXGISwapChain1>
+    {field} # m_pDepthStencilBuffer : ComPtr<ID3D11Texture2D>
+    {field} # m_pRenderTargetView : ComPtr<ID3D11RenderTargetView>
+    {field} # m_pDepthStencilView : ComPtr<ID3D11DepthStencilView>
+    {field} # m_ScreenViewport : D3D11_VIEWPORT
+    {field} # m_MainWndCaption : std::wstring
+    {field} # m_ClientWidth : int
+    {field} # m_ClientHeight : int
+    --
+    {method} + D3DApp(hInstance, windowName, width, height)
+    {method} + ~D3DApp()
+    {method} + AppInst() : HINSTANCE
+    {method} + MainWnd() : HWND
+    {method} + AspectRatio() : float
+    {method} + Run() : int
+    {method} + {abstract} UpdateScene(dt : float) : void
+    {method} + {abstract} DrawScene() : void
+    {method} + virtual Init() : bool
+    {method} + virtual OnResize() : void
+    {method} + virtual MsgProc(hwnd, msg, wParam, lParam) : LRESULT
+    {method} # InitMainWindow() : bool
+    {method} # InitDirect3D() : bool
+    {method} # CalculateFrameStats() : void
+}
+
+' 游戏应用类
+class GameApp {
+    {method} + GameApp(hInstance, windowName, width, height)
+    {method} + ~GameApp()
+    {method} + Init() : bool
+    {method} + OnResize() : void
+    {method} + UpdateScene(dt : float) : void
+    {method} + DrawScene() : void
+}
+
+' CPU计时器类
+class CpuTimer {
+    {field} - m_SecondsPerCount : double
+    {field} - m_DeltaTime : double
+    {field} - m_BaseTime : __int64
+    {field} - m_PausedTime : __int64
+    {field} - m_StopTime : __int64
+    {field} - m_PrevTime : __int64
+    {field} - m_CurrTime : __int64
+    {field} - m_Stopped : bool
+    --
+    {method} + CpuTimer()
+    {method} + TotalTime() : float
+    {method} + DeltaTime() : float
+    {method} + Reset() : void
+    {method} + Start() : void
+    {method} + Stop() : void
+    {method} + Tick() : void
+    {method} + IsStopped() : bool
+}
+
+' DirectX COM 接口
+interface ID3D11Device <<COM Interface>> {
+    创建资源和视图
+    检查特性支持
+}
+
+interface ID3D11DeviceContext <<COM Interface>> {
+    渲染管线操作
+    资源绑定
+    绘制命令
+}
+
+interface IDXGISwapChain <<COM Interface>> {
+    呈现渲染结果
+    管理后备缓冲区
+}
+
+' 工具类
+class DXTrace <<Utility>> {
+    {method} {static} + DXTraceW(file, line, hr, msg, popup) : HRESULT
+}
+
+class d3dUtil <<Utility>> {
+    {method} {static} + D3D11SetDebugObjectName(resource, name) : void
+    {method} {static} + DXGISetDebugObjectName(object, name) : void
+}
+
+' 关系定义
+GameApp --|> D3DApp : 继承
+D3DApp *-- CpuTimer : 包含
+D3DApp o-- ID3D11Device : 使用
+D3DApp o-- ID3D11DeviceContext : 使用
+D3DApp o-- IDXGISwapChain : 使用
+D3DApp ..> DXTrace : 依赖
+D3DApp ..> d3dUtil : 依赖
+
+note right of D3DApp
+  **D3DApp** 是核心框架类
+  
+  职责：
+  • 窗口初始化和消息处理
+  • Direct3D 设备创建
+  • 交换链和渲染目标管理
+  • 游戏主循环
+  • 帧率计算
+end note
+
+note left of GameApp
+  **GameApp** 继承自 D3DApp
+  
+  职责：
+  • 实现具体的游戏逻辑
+  • 场景更新
+  • 场景渲染
+  
+  当前示例：
+  • 清空屏幕为蓝色
+end note
+
+note bottom of CpuTimer
+  **CpuTimer** 高精度计时器
+  
+  使用 QueryPerformanceCounter
+  支持暂停/恢复功能
+end note
+
+@enduml
