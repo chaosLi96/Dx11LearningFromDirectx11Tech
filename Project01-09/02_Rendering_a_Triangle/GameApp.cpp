@@ -24,6 +24,13 @@ bool GameApp::Init()
     if (!D3DApp::Init())
         return false;
 
+	if (!InitEffect())
+		return false;
+
+	if (!InitResources())
+		return false;
+
+
     return true;
 }
 
@@ -62,7 +69,7 @@ bool GameApp::InitEffect()
     HR(m_pd3dDevice->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pPixelShader.GetAddressOf()));
 
 
-    return false;
+    return true;
 }
 
 bool GameApp::InitResources()
@@ -74,7 +81,7 @@ bool GameApp::InitResources()
         { DirectX::XMFLOAT3(-0.5f, -0.5f, 0.5f), DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) }
 	};
 
-	// ´´½¨¶¥µã»º³åÇø
+	// åˆ›å»ºé¡¶ç‚¹ç¼“å†²åŒº
     D3D11_BUFFER_DESC vbd;
 	ZeroMemory(&vbd, sizeof(vbd));
 	vbd.Usage = D3D11_USAGE_IMMUTABLE;
@@ -82,7 +89,7 @@ bool GameApp::InitResources()
 	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vbd.CPUAccessFlags = 0;
 
-	// ÉèÖÃ³õÊ¼Êı¾İ
+	// è®¾ç½®åˆå§‹æ•°æ®
 	D3D11_SUBRESOURCE_DATA initialData;
 	ZeroMemory(&initialData, sizeof(initialData));
 	initialData.pSysMem = vertices;
@@ -107,5 +114,5 @@ bool GameApp::InitResources()
 
 
 
-    return false;
+    return true;
 }
