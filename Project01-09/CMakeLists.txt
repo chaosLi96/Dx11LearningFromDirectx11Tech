@@ -2,3 +2,4 @@ cmake_minimum_required(VERSION 3.14)
 
 add_subdirectory("01_DirectX11_Init")
 add_subdirectory("02_Rendering_a_Triangle")
+add_subdirectory("03_Rendering_a_Cube")
