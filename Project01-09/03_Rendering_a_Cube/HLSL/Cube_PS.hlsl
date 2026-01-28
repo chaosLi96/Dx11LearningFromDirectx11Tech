@@ -1,6 +1,6 @@
 #include "Cube.hlsli"
 
-float4 PS(VertexOut vOut) : SV_Target
+float4 PS(VertexOut pIn) : SV_Target
 {
-    return vOut.color;
+    return pIn.color;
 }
