@@ -13,6 +13,8 @@ extern "C"
     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 0x00000001;
 }
 
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 namespace
 {
     // This is just used to forward Windows messages from a global window
@@ -61,6 +63,10 @@ D3DApp::~D3DApp()
     // 恢复所有默认设定
     if (m_pd3dImmediateContext)
         m_pd3dImmediateContext->ClearState();
+
+    ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 }
 
 HINSTANCE D3DApp::AppInst()const
@@ -98,6 +104,11 @@ int D3DApp::Run()
             if (!m_AppPaused)
             {
                 CalculateFrameStats();
+
+                ImGui_ImplDX11_NewFrame();
+                ImGui_ImplWin32_NewFrame();
+                ImGui::NewFrame();
+
                 UpdateScene(m_Timer.DeltaTime());
                 DrawScene();
             }
@@ -118,6 +129,9 @@ bool D3DApp::Init()
 
     if (!InitDirect3D())
         return false;
+		
+	if(!InitImGui())
+		return false;
 
     return true;
 }
@@ -200,6 +214,9 @@ void D3DApp::OnResize()
 
 LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    if (ImGui_ImplWin32_WndProcHandler(m_hMainWnd, msg, wParam, lParam))
+        return true;
+
     switch (msg)
     {
         // WM_ACTIVATE is sent when the window is activated or deactivated.  
@@ -529,6 +546,24 @@ bool D3DApp::InitDirect3D()
     // 每当窗口被重新调整大小的时候，都需要调用这个OnResize函数。现在调用
     // 以避免代码重复
     OnResize();
+
+    return true;
+}
+
+bool D3DApp::InitImGui()
+{
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; //允许键盘控制
+    io.ConfigWindowsMoveFromTitleBarOnly = true;          //仅允许标题拖动
+
+    //设置Dear ImGui风格
+    ImGui::StyleColorsDark();
+
+	// 设置平台/渲染器绑定
+	ImGui_ImplWin32_Init(m_hMainWnd);
+	ImGui_ImplDX11_Init(m_pd3dDevice.Get(), m_pd3dImmediateContext.Get());
 
     return true;
 }

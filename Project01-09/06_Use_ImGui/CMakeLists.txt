@@ -48,11 +48,15 @@ endforeach()
 
 
 add_executable(06_Use_ImGui WIN32 ${DIR_SRCS} ${HEADER_FILES} ${HLSL_FILES})
+
+
+
+target_link_libraries(06_Use_ImGui d3d11.lib dxgi.lib dxguid.lib D3DCompiler.lib winmm.lib)
+
+# ImGui
+target_link_libraries(06_Use_ImGui ImGui)
+
 source_group("HLSL Files" FILES ${HLSL_FILES})
-
-
-target_link_libraries(06_Use_ImGui d3d11.lib dxgi.lib dxguid.lib D3DCompiler.lib d2d1.lib dwrite.lib winmm.lib)
-
 set_target_properties(06_Use_ImGui PROPERTIES OUTPUT_NAME "06_Use_ImGui")
 
 set_target_properties(06_Use_ImGui PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_BINARY_DIR})

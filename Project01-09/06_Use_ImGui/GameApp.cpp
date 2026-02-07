@@ -41,9 +41,83 @@ void GameApp::OnResize()
 
 void GameApp::UpdateScene(float dt)
 {
-	static float phi = 0.0f, theta = 0.0f;
-	phi += 0.3f * dt, theta += 0.37f * dt;
-	m_CBuffer.world = XMMatrixTranspose(XMMatrixRotationX(phi) * XMMatrixRotationY(theta));
+	//ImGui内部示例窗口
+	ImGui::ShowAboutWindow();
+	ImGui::ShowDemoWindow();
+	ImGui::ShowUserGuide();
+
+	ImGuiIO& io = ImGui::GetIO();
+	static float tx = 0.f, ty = 0.f, phi = 0.f, theta = 0.f, scale = 1.f, fov = XM_PIDIV2;
+	static bool animateCube = true, customColor = false;
+	if (animateCube)
+	{
+		phi += 0.3f * dt, theta += 0.37f * dt;
+		phi = XMScalarModAngle(phi);
+		theta = XMScalarModAngle(theta);
+	}
+
+	if (ImGui::Begin("Use ImGui"))
+	{
+		ImGui::Checkbox("Animate Cube", &animateCube);
+		ImGui::SameLine(0.f, 25.f);
+		if (ImGui::Button("Reset Params"))
+		{
+			tx = ty = phi = theta = 0.f;
+			scale = 1.f;
+			fov = XM_PIDIV2;
+		}
+		ImGui::SliderFloat("Scale", &scale, 0.2f, 2.f);
+
+		ImGui::Text("Phi: %.2f degrees", XMConvertToDegrees(phi));
+		ImGui::SliderFloat("##1", &phi, -XM_PI, XM_PI, "");
+		ImGui::Text("Theta : %.2f degrees", XMConvertToDegrees(theta));
+		ImGui::SliderFloat("##2", &theta, -XM_PI, XM_PI, "");
+
+		ImGui::Text("Position:(%.1f,%.1f,0,0)", tx, ty);
+		
+		ImGui::Text("FOV: %.2f degrees", XMConvertToDegrees(fov));
+		ImGui::SliderFloat("##3", &fov, XM_PIDIV4,XM_PI / 3 * 2,"");
+
+		if (ImGui::Checkbox("Use Custom Color", &customColor))
+			m_CBuffer.useCustomColor = customColor;
+		if (customColor)
+		{
+			ImGui::ColorEdit3("Color", reinterpret_cast<float*>(&m_CBuffer.color));
+		}
+	}
+	ImGui::End();
+
+	if (!ImGui::IsAnyItemActive())
+	{
+		if (ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+		{
+			tx += io.MouseDelta.x * 0.01f;
+			ty -= io.MouseDelta.y * 0.01f;
+		}
+		else if (ImGui::IsMouseDragging(ImGuiMouseButton_Right))
+		{
+			phi += io.MouseDelta.y * 0.01f;
+			theta += io.MouseDelta.x * 0.01f;
+			phi = XMScalarModAngle(phi);
+			theta = XMScalarModAngle(theta);
+		}
+		else if (io.MouseWheel != 0.0f)
+		{
+			scale += 0.02f * io.MouseWheel;
+			if (scale > 2.0f)
+				scale = 2.0f;
+			else if (scale < 0.2f)
+				scale = 0.2f;
+		}
+	}
+
+	m_CBuffer.world = XMMatrixTranspose(
+		XMMatrixScalingFromVector(XMVectorReplicate(scale))*
+		XMMatrixRotationX(phi) * XMMatrixRotationY(theta)*
+		XMMatrixTranslation(tx,ty,0.f));
+
+	m_CBuffer.proj = XMMatrixTranspose(XMMatrixPerspectiveFovLH(fov, AspectRatio(), 1.f, 1000.f));
+
 
 	//更新常量缓冲区
 	D3D11_MAPPED_SUBRESOURCE mappedData;
@@ -61,6 +135,9 @@ void GameApp::DrawScene()
     m_pd3dImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	m_pd3dImmediateContext->DrawIndexed(36, 0, 0);
+
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
     HR(m_pSwapChain->Present(0, 0));
 }
@@ -178,14 +255,14 @@ bool GameApp::InitResources()
 
 	m_pd3dDevice->CreateBuffer(&cbd, nullptr, m_pConstantBuffer.GetAddressOf());
 
-	m_CBuffer.world = XMMatrixIdentity();
 	m_CBuffer.view = XMMatrixTranspose(XMMatrixLookAtLH(
 		XMVectorSet(0.f,0.f,-5.0f,0.0f),
 		XMVectorSet(0.f, 0.f, 0.0f, 0.0f),
 		XMVectorSet(0.f, 1.f, 0.0f, 0.0f)
 		));
-	m_CBuffer.proj = XMMatrixTranspose(XMMatrixPerspectiveFovLH(XM_PIDIV2, AspectRatio(), 1.0f, 1000.0f));
 
+	m_CBuffer.color = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
+	m_CBuffer.useCustomColor = false;
 
 	UINT stride = sizeof(VertexPosColor);
 	UINT offset = 0;
@@ -197,7 +274,7 @@ bool GameApp::InitResources()
 	m_pd3dImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
 
 	m_pd3dImmediateContext->VSSetConstantBuffers(0, 1, m_pConstantBuffer.GetAddressOf());
-
+	m_pd3dImmediateContext->PSSetConstantBuffers(0, 1, m_pConstantBuffer.GetAddressOf());
 	m_pd3dImmediateContext->PSSetShader(m_pPixelShader.Get(), nullptr, 0);
 
 
