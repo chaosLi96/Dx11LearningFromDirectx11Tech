@@ -3,6 +3,10 @@ project(DIRECT11_TECH LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
+add_subdirectory("ImGui")
+set_target_properties(ImGui PROPERTIES FOLDER "ImGui")
+
+
 # 启用IDE文件夹支持
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
