@@ -47,19 +47,19 @@ endforeach()
 
 
 
-add_executable(06_Use_ImGui WIN32 ${DIR_SRCS} ${HEADER_FILES} ${HLSL_FILES})
+add_executable(07_Lighting WIN32 ${DIR_SRCS} ${HEADER_FILES} ${HLSL_FILES})
 
 
 
-target_link_libraries(06_Use_ImGui d3d11.lib dxgi.lib dxguid.lib D3DCompiler.lib winmm.lib)
+target_link_libraries(07_Lighting d3d11.lib dxgi.lib dxguid.lib D3DCompiler.lib winmm.lib)
 
 # ImGui
-target_link_libraries(06_Use_ImGui ImGui)
+target_link_libraries(07_Lighting ImGui)
 
 source_group("HLSL Files" FILES ${HLSL_FILES})
-set_target_properties(06_Use_ImGui PROPERTIES OUTPUT_NAME "06_Use_ImGui")
+set_target_properties(07_Lighting PROPERTIES OUTPUT_NAME "07_Lighting")
 
-set_target_properties(06_Use_ImGui PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_BINARY_DIR})
-set_target_properties(06_Use_ImGui PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_BINARY_DIR})
+set_target_properties(07_Lighting PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_BINARY_DIR})
+set_target_properties(07_Lighting PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_BINARY_DIR})
 
-set_target_properties(06_Use_ImGui PROPERTIES FOLDER "Project01-09")
+set_target_properties(07_Lighting PROPERTIES FOLDER "Project01-09")

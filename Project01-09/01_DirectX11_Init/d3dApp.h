@@ -29,6 +29,7 @@ public:
     // 窗口的消息回调函数
 protected:
     bool InitMainWindow();      // 窗口初始化
+    bool PrintVideoCarcInfo();
     bool InitDirect3D();        // Direct3D初始化
 
     void CalculateFrameStats(); // 计算每秒帧数并在窗口显示

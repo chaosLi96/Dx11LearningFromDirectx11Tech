@@ -116,6 +116,8 @@ bool D3DApp::Init()
     if (!InitMainWindow())
         return false;
 
+    PrintVideoCarcInfo();
+
     if (!InitDirect3D())
         return false;
 
@@ -309,11 +311,16 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_LBUTTONDOWN:
-    case WM_MBUTTONDOWN:
-    case WM_RBUTTONDOWN:
         return 0;
+    case WM_MBUTTONDOWN:
+        m_pSwapChain->SetFullscreenState(FALSE, nullptr);
+        return 0;
+    case WM_RBUTTONDOWN:
+
+		m_pSwapChain->SetFullscreenState(TRUE, nullptr);
+        return 0;
+
     case WM_LBUTTONUP:
-    case WM_MBUTTONUP:
     case WM_RBUTTONUP:
         return 0;
     case WM_MOUSEMOVE:
@@ -362,6 +369,124 @@ bool D3DApp::InitMainWindow()
     UpdateWindow(m_hMainWnd);
 
     return true;
+}
+
+bool D3DApp::PrintVideoCarcInfo()
+{
+	ComPtr<IDXGIFactory1> dxgiFactory;
+	HRESULT hr = CreateDXGIFactory1(
+		__uuidof(IDXGIFactory1),
+		reinterpret_cast<void**>(dxgiFactory.GetAddressOf()));
+
+    if(FAILED(hr))
+    {
+        MessageBox(0, L"CreateDXGIFactory1 failed.", 0, 0);
+        return false;
+    }
+
+    for (UINT i = 0;; i++)
+    {
+        ComPtr<IDXGIAdapter1> adapter;
+        hr = dxgiFactory->EnumAdapters1(i, adapter.GetAddressOf());
+
+        if (hr == DXGI_ERROR_NOT_FOUND)
+            break;
+
+        if (FAILED(hr))
+        {
+            MessageBox(0, L"EnumAdapters1 failed.", 0, 0);
+            continue;
+        }
+
+        DXGI_ADAPTER_DESC1 desc;
+        adapter->GetDesc1(&desc);
+
+        WCHAR strBuffer[300];
+		
+        swprintf_s(strBuffer, 300, L"%d. Video card Info: %ls\n", i,desc.Description);
+		OutputDebugStringW(strBuffer);
+
+
+        for (UINT outputIndex = 0;; outputIndex++)
+        {
+            ComPtr<IDXGIOutput>output;
+
+            hr = adapter->EnumOutputs(outputIndex, output.GetAddressOf());
+
+            
+
+            if(hr == DXGI_ERROR_NOT_FOUND)
+                break;
+
+            if (FAILED(hr))
+                continue;
+
+            DXGI_OUTPUT_DESC outputDesc;
+            output->GetDesc(&outputDesc);
+
+			swprintf_s(strBuffer, 300, L"\n %u. deviceName:%ls left= %d ,top = %d ,right = %d,bottom = %d , AttachToDeskTop = %d\n", outputIndex, outputDesc.DeviceName,
+                outputDesc.DesktopCoordinates.left,
+                outputDesc.DesktopCoordinates.top, 
+                outputDesc.DesktopCoordinates.right, 
+                outputDesc.DesktopCoordinates.bottom, 
+                outputDesc.AttachedToDesktop ? 1 : 0);
+			OutputDebugStringW(strBuffer);
+
+
+
+			UINT modeCount = 0;
+
+			hr = output->GetDisplayModeList(
+				DXGI_FORMAT_R8G8B8A8_UNORM,
+				0,
+				&modeCount,
+				nullptr);
+
+			if (FAILED(hr))
+			{
+                MessageBox(0, L"GetDisplayModeList count failed1", 0, 0);
+				return false;
+			}
+
+			std::vector<DXGI_MODE_DESC> modes(modeCount);
+
+			hr = output->GetDisplayModeList(
+				DXGI_FORMAT_R8G8B8A8_UNORM,
+				0,
+				&modeCount,
+				modes.data());
+
+			if (FAILED(hr))
+			{
+                MessageBox(0, L"GetDisplayModeList count failed2", 0, 0);
+				return false;
+			}
+
+			for (UINT k = 0; k < modeCount; ++k)
+			{
+				const DXGI_MODE_DESC& mode = modes[k];
+
+				double refreshRate = 0.0;
+				if (mode.RefreshRate.Denominator != 0)
+				{
+					refreshRate =
+						static_cast<double>(mode.RefreshRate.Numerator) /
+						static_cast<double>(mode.RefreshRate.Denominator);
+				}
+
+				swprintf_s(strBuffer, 300, L"Mode %d : mode.Width %d ,mode.Height %d ,Format %d , refreshRate %lf \n", k, mode.Width,
+                    mode.Height,
+                    mode.Format,
+                    refreshRate);
+				OutputDebugStringW(strBuffer);
+
+			}
+        }
+    }
+
+
+
+
 }
 
 bool D3DApp::InitDirect3D()
@@ -520,7 +645,7 @@ bool D3DApp::InitDirect3D()
     
 
     // 可以禁止alt+enter全屏
-    dxgiFactory1->MakeWindowAssociation(m_hMainWnd, DXGI_MWA_NO_ALT_ENTER | DXGI_MWA_NO_WINDOW_CHANGES);
+    //dxgiFactory1->MakeWindowAssociation(m_hMainWnd, DXGI_MWA_NO_ALT_ENTER | DXGI_MWA_NO_WINDOW_CHANGES);
 
     // 设置调试对象名
     D3D11SetDebugObjectName(m_pd3dImmediateContext.Get(), "ImmediateContext");
