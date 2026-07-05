@@ -55,13 +55,13 @@ struct VertexPosNormalColor
 	VertexPosNormalColor& operator=(VertexPosNormalColor&&) = default;
 
 	constexpr VertexPosNormalColor(const DirectX::XMFLOAT3& _pos, const DirectX::XMFLOAT3& _normal,
-		const DirectX::XMFLOAT3 _color
+		const DirectX::XMFLOAT4& _color
 	) : pos(_pos), normal(_normal), color(_color) {
 	}
 
 	DirectX::XMFLOAT3 pos;
 	DirectX::XMFLOAT3 normal;
-	DirectX::XMFLOAT3 color;
+	DirectX::XMFLOAT4 color;
 	static const D3D11_INPUT_ELEMENT_DESC inputLayout[3];
 };
 

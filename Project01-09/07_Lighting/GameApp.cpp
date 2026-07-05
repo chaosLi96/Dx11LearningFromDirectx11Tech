@@ -172,6 +172,7 @@ bool GameApp::ResetMesh(const Geometry::MeshData<VertexPosNormalColor>& meshData
 	m_pd3dImmediateContext->IASetVertexBuffers(0, 1, m_pVertexBuffer.GetAddressOf(), &stride, &offset);
 
 
+	m_IndexCount = static_cast<UINT>(meshData.indexVec.size());
 	D3D11_BUFFER_DESC ibd;
 	ZeroMemory(&ibd, sizeof(ibd));
 	ibd.Usage = D3D11_USAGE_IMMUTABLE;

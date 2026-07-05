@@ -20,7 +20,7 @@ cbuffer PSConstantBuffer : register(b1)
 
 struct VertexIn
 {
-    float3 posL : POSITIONT;
+    float3 posL : POSITION;
     float3 normal : NORMAL;
     float4 color : COLOR;
 };
