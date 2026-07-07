@@ -128,7 +128,7 @@ void GameApp::UpdateScene(float dt)
 	m_pd3dImmediateContext->Unmap(m_pConstantBuffers[0].Get(), 0);
 
 	HR(m_pd3dImmediateContext->Map(m_pConstantBuffers[1].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData));
-	memcpy_s(mappedData.pData, sizeof(PSConstantBuffer), &m_VSConstantBuffer, sizeof(PSConstantBuffer));
+	memcpy_s(mappedData.pData, sizeof(PSConstantBuffer), &m_PSConstantBuffer, sizeof(PSConstantBuffer));
 	m_pd3dImmediateContext->Unmap(m_pConstantBuffers[1].Get(), 0);
 
 	
@@ -138,56 +138,18 @@ void GameApp::DrawScene()
 {
     assert(m_pd3dImmediateContext);
     assert(m_pSwapChain);
-    static float blue[4] = { 0.0f, 0.0f, 1.0f, 1.0f };  // RGBA = (0,0,255,255)
-    m_pd3dImmediateContext->ClearRenderTargetView(m_pRenderTargetView.Get(), blue);
+    static float backColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };  // RGBA = (0,0,255,255)
+    m_pd3dImmediateContext->ClearRenderTargetView(m_pRenderTargetView.Get(), backColor);
     m_pd3dImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	m_pd3dImmediateContext->DrawIndexed(m_IndexCount, 0, 0);
 
-	ImGui::Render();
+
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
     HR(m_pSwapChain->Present(0, 0));
 }
 
-bool GameApp::ResetMesh(const Geometry::MeshData<VertexPosNormalColor>& meshData)
-{
-	m_pVertexBuffer.Reset();
-	m_pIndexBuffer.Reset();
-
-	D3D11_BUFFER_DESC vbd;
-	ZeroMemory(&vbd, sizeof(vbd));
-	vbd.Usage = D3D11_USAGE_IMMUTABLE;
-	vbd.ByteWidth = (UINT)meshData.vertexVec.size() * sizeof(VertexPosNormalColor);
-	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vbd.CPUAccessFlags = 0;
-	// 新建顶点缓冲区
-		// 新建顶点缓冲区
-	D3D11_SUBRESOURCE_DATA InitData;
-	ZeroMemory(&InitData, sizeof(InitData));
-	InitData.pSysMem = meshData.vertexVec.data();
-	HR(m_pd3dDevice->CreateBuffer(&vbd, &InitData, m_pVertexBuffer.GetAddressOf()));
-	UINT stride = sizeof(VertexPosNormalColor);	// 跨越字节数
-	UINT offset = 0;							// 起始偏移量
-	m_pd3dImmediateContext->IASetVertexBuffers(0, 1, m_pVertexBuffer.GetAddressOf(), &stride, &offset);
-
-
-	m_IndexCount = static_cast<UINT>(meshData.indexVec.size());
-	D3D11_BUFFER_DESC ibd;
-	ZeroMemory(&ibd, sizeof(ibd));
-	ibd.Usage = D3D11_USAGE_IMMUTABLE;
-	ibd.ByteWidth = m_IndexCount * sizeof(DWORD);
-	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	ibd.CPUAccessFlags = 0;
-	// 新建顶点缓冲区
-		// 新建顶点缓冲区
-	
-	InitData.pSysMem = meshData.indexVec.data();
-	HR(m_pd3dDevice->CreateBuffer(&ibd, &InitData, m_pIndexBuffer.GetAddressOf()));
-	m_pd3dImmediateContext->IASetIndexBuffer(m_pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-	
-	return true;
-}
 
 bool GameApp::InitEffect()
 {
@@ -296,4 +258,43 @@ bool GameApp::InitResources()
 
 
     return true;
+}
+
+bool GameApp::ResetMesh(const Geometry::MeshData<VertexPosNormalColor>& meshData)
+{
+	m_pVertexBuffer.Reset();
+	m_pIndexBuffer.Reset();
+
+	D3D11_BUFFER_DESC vbd;
+	ZeroMemory(&vbd, sizeof(vbd));
+	vbd.Usage = D3D11_USAGE_IMMUTABLE;
+	vbd.ByteWidth = (UINT)meshData.vertexVec.size() * sizeof(VertexPosNormalColor);
+	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vbd.CPUAccessFlags = 0;
+	// 新建顶点缓冲区
+		// 新建顶点缓冲区
+	D3D11_SUBRESOURCE_DATA InitData;
+	ZeroMemory(&InitData, sizeof(InitData));
+	InitData.pSysMem = meshData.vertexVec.data();
+	HR(m_pd3dDevice->CreateBuffer(&vbd, &InitData, m_pVertexBuffer.GetAddressOf()));
+	UINT stride = sizeof(VertexPosNormalColor);	// 跨越字节数
+	UINT offset = 0;							// 起始偏移量
+	m_pd3dImmediateContext->IASetVertexBuffers(0, 1, m_pVertexBuffer.GetAddressOf(), &stride, &offset);
+
+
+	m_IndexCount = static_cast<UINT>(meshData.indexVec.size());
+	D3D11_BUFFER_DESC ibd;
+	ZeroMemory(&ibd, sizeof(ibd));
+	ibd.Usage = D3D11_USAGE_IMMUTABLE;
+	ibd.ByteWidth = m_IndexCount * sizeof(DWORD);
+	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	ibd.CPUAccessFlags = 0;
+	// 新建顶点缓冲区
+		// 新建顶点缓冲区
+	
+	InitData.pSysMem = meshData.indexVec.data();
+	HR(m_pd3dDevice->CreateBuffer(&ibd, &InitData, m_pIndexBuffer.GetAddressOf()));
+	m_pd3dImmediateContext->IASetIndexBuffer(m_pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+	
+	return true;
 }

@@ -41,7 +41,7 @@ struct Material
     float4 ambient;
     float4 diffuse;
     float4 specular;
-    float reflect;
+    float4 reflect;
 };
 
 void ComputeDirectionalLight(Material mat, DirectionalLight L,
@@ -99,7 +99,7 @@ void ComputePointLight(Material mat,PointLight L,float3 pos,float3 normal,float3
         float specFactor = pow(max(dot(v, ToEye), 0.0f), mat.specular.w);
         
         diffuse = diffuseFactor * mat.diffuse * L.diffuse;
-        spec = specFactor * mat.specular * mat.specular;
+        spec = specFactor * mat.specular * L.specular;
     }
     
     float att = 1.0f / dot(L.att, float3(1.f, d, d * d));
