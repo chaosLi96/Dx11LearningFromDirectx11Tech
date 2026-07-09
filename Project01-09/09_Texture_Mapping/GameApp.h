@@ -21,11 +21,21 @@ public:
 
     struct PSConstantBuffer
     {
-        DirectionalLight dirLight;
-        PointLight pointLight;
-        SpotLight spotLight;
+        DirectionalLight dirLight[10];
+        PointLight pointLight[10];
+        SpotLight spotLight[10];
         Material material;
+        int numDirLight;
+        int numPointLight;
+        int numSpotLight;
+        float pad;
         DirectX::XMFLOAT4 eyePos;
+    };
+
+    enum class ShowMode
+    {
+        WoodCrate,
+        FireAnim
     };
 
 public:
@@ -39,27 +49,33 @@ public:
 private:
     bool InitEffect();
     bool InitResources();
-    bool ResetMesh(const Geometry::MeshData<VertexPosNormalColor>& meshData);
+
+    bool ResetMesh(const Geometry::MeshData<VertexPosNormalTex>& meshData);
 
 private:
-    ComPtr<ID3D11InputLayout> m_pVertexLayout; // 顶点输入布局
+    ComPtr<ID3D11InputLayout> m_pVertexLayout2D; // 3D顶点输入布局
+    ComPtr<ID3D11InputLayout> m_pVertexLayout3D; // 3D顶点输入布局
     ComPtr<ID3D11Buffer>m_pVertexBuffer;   //顶点缓冲区
     ComPtr<ID3D11Buffer> m_pIndexBuffer;     //索引缓冲区
     ComPtr<ID3D11Buffer> m_pConstantBuffers[2]; //常量缓冲区
     UINT m_IndexCount;
+    int m_CurrFrame;
+    ShowMode m_CurrMode;
+
+	ComPtr<ID3D11ShaderResourceView> m_pWoodCrate; //木材纹理
+    std::vector<ComPtr<ID3D11ShaderResourceView>> m_pFireAnims;
+    ComPtr<ID3D11SamplerState> m_pSamplerState;
 
 
-	ComPtr<ID3D11VertexShader> m_pVertexShader; //顶点着色器
-	ComPtr<ID3D11PixelShader> m_pPixelShader; // 像素着色器
+	ComPtr<ID3D11VertexShader> m_pVertexShader3D; //顶点着色器
+	ComPtr<ID3D11PixelShader> m_pPixelShader3D; // 像素着色器
+    ComPtr<ID3D11VertexShader> m_pVertexShader2D; //顶点着色器
+    ComPtr<ID3D11PixelShader> m_pPixelShader2D; //像素着色器
+
+
     VSConstantBuffer m_VSConstantBuffer;
     PSConstantBuffer m_PSConstantBuffer;
 
-    DirectionalLight m_DirLight;
-    PointLight m_PointLight;
-    SpotLight m_SpotLight;
-
-    ComPtr<ID3D11RasterizerState> m_pRSWireFrame;
-    bool m_IsWireframeMode;  //当前是否为线框模式
 };
 
 

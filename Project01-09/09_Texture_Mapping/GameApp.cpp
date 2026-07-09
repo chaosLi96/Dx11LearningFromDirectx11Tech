@@ -6,12 +6,10 @@ using namespace DirectX;
 GameApp::GameApp(HINSTANCE hInstance, const std::wstring& windowName, int initWidth, int initHeight)
     : D3DApp(hInstance, windowName, initWidth, initHeight),
 	m_IndexCount(),
+	m_CurrFrame(),
+	m_CurrMode(ShowMode::WoodCrate),
 	m_VSConstantBuffer(),
-	m_PSConstantBuffer(),
-	m_DirLight(),
-	m_PointLight(),
-	m_SpotLight(),
-	m_IsWireframeMode(false)
+	m_PSConstantBuffer()
 {
 }
 
@@ -154,14 +152,26 @@ void GameApp::DrawScene()
 bool GameApp::InitEffect()
 {
     ComPtr<ID3DBlob> blob;
-    HR(CreateShaderFromFile(L"HLSL\\Light_VS.cso", L"HLSL\\Light_VS.hlsl", "VS", "vs_5_0", blob.ReleaseAndGetAddressOf()));
-    HR(m_pd3dDevice->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pVertexShader.GetAddressOf()));
+    HR(CreateShaderFromFile(L"HLSL\\Basic_2D_VS.cso", L"HLSL\\Basic_2D_VS.hlsl", "VS", "vs_5_0", blob.ReleaseAndGetAddressOf()));
+    HR(m_pd3dDevice->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pVertexShader2D.GetAddressOf()));
 
-    HR(m_pd3dDevice->CreateInputLayout(VertexPosNormalColor::inputLayout, ARRAYSIZE(VertexPosNormalColor::inputLayout),
-        blob->GetBufferPointer(), blob->GetBufferSize(), m_pVertexLayout.GetAddressOf()));
+	HR(m_pd3dDevice->CreateInputLayout(VertexPosTex::inputLayout, ARRAYSIZE(VertexPosTex::inputLayout),
+        blob->GetBufferPointer(), blob->GetBufferSize(), m_pVertexLayout2D.GetAddressOf()));
 
-	HR(CreateShaderFromFile(L"HLSL\\Light_PS.cso", L"HLSL\\Light_PS.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
-    HR(m_pd3dDevice->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pPixelShader.GetAddressOf()));
+	HR(CreateShaderFromFile(L"HLSL\\Basic_2D_PS.cso", L"HLSL\\Basic_2D_PS.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
+    HR(m_pd3dDevice->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pPixelShader2D.GetAddressOf()));
+
+
+
+
+	HR(CreateShaderFromFile(L"HLSL\\Basic_3D_VS.cso", L"HLSL\\Basic_3D_VS.hlsl", "VS", "vs_5_0", blob.ReleaseAndGetAddressOf()));
+	HR(m_pd3dDevice->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pVertexShader3D.GetAddressOf()));
+
+	HR(m_pd3dDevice->CreateInputLayout(VertexPosNormalTex::inputLayout, ARRAYSIZE(VertexPosNormalTex::inputLayout),
+		blob->GetBufferPointer(), blob->GetBufferSize(), m_pVertexLayout3D.GetAddressOf()));
+
+	HR(CreateShaderFromFile(L"HLSL\\Basic_3D_PS.cso", L"HLSL\\Basic_3D_PS.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
+	HR(m_pd3dDevice->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pPixelShader3D.GetAddressOf()));
 
 
     return true;
@@ -169,9 +179,8 @@ bool GameApp::InitEffect()
 
 bool GameApp::InitResources()
 {
-	auto meshData = Geometry::CreateBox<VertexPosNormalColor>();
+	auto meshData = Geometry::CreateBox<VertexPosNormalTex>();
 	ResetMesh(meshData);
-
 
 
 	D3D11_BUFFER_DESC cbd;
@@ -184,6 +193,30 @@ bool GameApp::InitResources()
 	HR(m_pd3dDevice->CreateBuffer(&cbd, nullptr, m_pConstantBuffers[0].GetAddressOf()));
 	cbd.ByteWidth = sizeof(PSConstantBuffer);
 	HR(m_pd3dDevice->CreateBuffer(&cbd, nullptr, m_pConstantBuffers[1].GetAddressOf()));
+
+
+	HR(CreateDDSTextureFromFile(m_pd3dDevice.Get(), L"..\\Texture\\WoodCrate.dds", nullptr, m_pWoodCrate.GetAddressOf()));
+
+
+	WCHAR strFile[40];
+	m_pFireAnims.resize(120);
+	for (int i = 1; i <= 120; i++)
+	{
+		wsprintf(strFile, L"..\\Texture\\FireAnim\\Fire%03d.bmp", i);
+		HR(CreateWICTextureFromFile(m_pd3dDevice.Get(),strFile,nullptr,m_pFireAnims[static_cast<size_t>(i)-1].GetAddressOf()));
+	}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 	//方向光
@@ -260,7 +293,7 @@ bool GameApp::InitResources()
     return true;
 }
 
-bool GameApp::ResetMesh(const Geometry::MeshData<VertexPosNormalColor>& meshData)
+bool GameApp::ResetMesh(const Geometry::MeshData<VertexPosNormalTex>& meshData)
 {
 	m_pVertexBuffer.Reset();
 	m_pIndexBuffer.Reset();
@@ -268,7 +301,7 @@ bool GameApp::ResetMesh(const Geometry::MeshData<VertexPosNormalColor>& meshData
 	D3D11_BUFFER_DESC vbd;
 	ZeroMemory(&vbd, sizeof(vbd));
 	vbd.Usage = D3D11_USAGE_IMMUTABLE;
-	vbd.ByteWidth = (UINT)meshData.vertexVec.size() * sizeof(VertexPosNormalColor);
+	vbd.ByteWidth = (UINT)meshData.vertexVec.size() * sizeof(VertexPosNormalTex);
 	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vbd.CPUAccessFlags = 0;
 	// 新建顶点缓冲区
@@ -277,7 +310,7 @@ bool GameApp::ResetMesh(const Geometry::MeshData<VertexPosNormalColor>& meshData
 	ZeroMemory(&InitData, sizeof(InitData));
 	InitData.pSysMem = meshData.vertexVec.data();
 	HR(m_pd3dDevice->CreateBuffer(&vbd, &InitData, m_pVertexBuffer.GetAddressOf()));
-	UINT stride = sizeof(VertexPosNormalColor);	// 跨越字节数
+	UINT stride = sizeof(VertexPosNormalTex);	// 跨越字节数
 	UINT offset = 0;							// 起始偏移量
 	m_pd3dImmediateContext->IASetVertexBuffers(0, 1, m_pVertexBuffer.GetAddressOf(), &stride, &offset);
 

@@ -16,6 +16,8 @@
 #include <d3dcompiler.h>
 #include <vector>
 #include <string>
+#include "DDSTextureLoader11.h"
+#include "WICTextureLoader11.h"
 
 //
 // 宏相关
