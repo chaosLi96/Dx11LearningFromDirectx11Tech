@@ -34,7 +34,7 @@ public:
 
     enum class ShowMode
     {
-        WoodCrate,
+        WoodCrate = 0,
         FireAnim
     };
 
@@ -50,7 +50,8 @@ private:
     bool InitEffect();
     bool InitResources();
 
-    bool ResetMesh(const Geometry::MeshData<VertexPosNormalTex>& meshData);
+    template<class VertexType>
+    bool ResetMesh(const Geometry::MeshData<VertexType>& meshData);
 
 private:
     ComPtr<ID3D11InputLayout> m_pVertexLayout2D; // 3D顶点输入布局

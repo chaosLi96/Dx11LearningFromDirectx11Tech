@@ -41,14 +41,14 @@ struct VertexPosTex
 
 struct VertexPosHWNormalTex
 {
-    float3 posH : SV_POSITION;
-    float posW : POSITION;
+    float4 posH : SV_POSITION;
+    float3 posW : POSITION;
     float3 normalW : NORMAL;
     float2 tex : TEXCOORD;
 };
 
 struct VertexPosHTex
 {
-    float3 posH : SV_POSITION;
+    float4 posH : SV_POSITION;
     float2 tex : TEXCOORD;
 };

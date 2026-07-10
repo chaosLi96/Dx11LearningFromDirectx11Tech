@@ -8,7 +8,7 @@ VertexPosHWNormalTex VS(VertexPosNormalTex vIn)
     
     vOut.posH = mul(posW, viewProj);
     vOut.posW = posW.xyz;
-    vOut.normal = mul(vIn.normal, (float3x3)g_WorldInvTranspose);
+    vOut.normalW = mul(vIn.normal, (float3x3)g_WorldInvTranspose);
     vOut.tex = vIn.tex;
     return vOut;
 }
