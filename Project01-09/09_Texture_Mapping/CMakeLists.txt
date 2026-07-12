@@ -63,3 +63,11 @@ set_target_properties(09_Texture_Mapping PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEB
 set_target_properties(09_Texture_Mapping PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_BINARY_DIR})
 
 set_target_properties(09_Texture_Mapping PROPERTIES FOLDER "Project01-09")
+
+add_custom_command(TARGET 09_Texture_Mapping POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/HLSL
+        $<TARGET_FILE_DIR:09_Texture_Mapping>/HLSL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/../Texture
+        $<TARGET_FILE_DIR:09_Texture_Mapping>/../Texture)

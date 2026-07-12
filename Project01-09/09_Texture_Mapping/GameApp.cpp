@@ -207,9 +207,9 @@ bool GameApp::InitResources()
 	m_PSConstantBuffer.pointLight[0].specular = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
 	m_PSConstantBuffer.pointLight[0].att = XMFLOAT3(0.0f, 0.1f, 0.0f);
 	m_PSConstantBuffer.pointLight[0].range = 25.0f;
-	m_PSConstantBuffer.numDirLight = 1;
+	m_PSConstantBuffer.numDirLight = 0;
 	m_PSConstantBuffer.numPointLight = 1;
-	m_PSConstantBuffer.numSpotLight = 1;
+	m_PSConstantBuffer.numSpotLight = 0;
 
 	m_PSConstantBuffer.material.ambient = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.f);
 	m_PSConstantBuffer.material.diffuse = XMFLOAT4(1.f, 1.f, 1.f, 1.f);

@@ -25,7 +25,7 @@ namespace Geometry
 		const DirectX::XMFLOAT4& color = { 1.f,1.f,1.f,1.f });
 
 	template<class VertexType = VertexPosTex,class IndexType = DWORD>
-	MeshData<VertexType, IndexType> Create2DShow(const DirectX::XMFLOAT2& center, const DirectX::XMFLOAT2& scale, const DirectX::XMFLOAT2& color = { 1.f,1.f,1.f,1.f });
+	MeshData<VertexType, IndexType> Create2DShow(const DirectX::XMFLOAT2& center, const DirectX::XMFLOAT2& scale, const DirectX::XMFLOAT4& color = { 1.f,1.f,1.f,1.f });
 	template<class VertexType = VertexPosTex, class IndexType = DWORD>
 	MeshData<VertexType, IndexType> Create2DShow(float centerX = 0.f, float centerY = 0.f, float scaleX = 1.f, float scaleY = 1.f, const DirectX::XMFLOAT4& color = { 1.f,1.f,1.f,1.f });
 }
@@ -54,6 +54,7 @@ namespace Geometry
 				{"TANGENT",std::pair<size_t,size_t>(24,40)},
 				{"COLOR", std::pair<size_t,size_t> (40,56)},
 				{"TEX0",std::pair<size_t,size_t>(56,64)},
+				{"TEXCOORD",std::pair<size_t,size_t>(56,64)},
 			};
 
 			for (int i = 0; i < ARRAYSIZE(VertexType::inputLayout); i++)

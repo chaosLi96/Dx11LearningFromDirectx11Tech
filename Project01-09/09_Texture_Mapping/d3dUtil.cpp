@@ -1,11 +1,49 @@
 #include "d3dUtil.h"
 
+namespace
+{
+    bool FileExists(const WCHAR* fileName)
+    {
+        if (!fileName)
+        {
+            return false;
+        }
+
+        DWORD fileAttributes = GetFileAttributesW(fileName);
+        return fileAttributes != INVALID_FILE_ATTRIBUTES &&
+            (fileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
+    }
+
+    bool IsFileNewer(const WCHAR* newerFileName, const WCHAR* olderFileName)
+    {
+        if (!newerFileName || !olderFileName)
+        {
+            return false;
+        }
+
+        WIN32_FILE_ATTRIBUTE_DATA newerFileData = {};
+        WIN32_FILE_ATTRIBUTE_DATA olderFileData = {};
+        if (!GetFileAttributesExW(newerFileName, GetFileExInfoStandard, &newerFileData) ||
+            !GetFileAttributesExW(olderFileName, GetFileExInfoStandard, &olderFileData))
+        {
+            return false;
+        }
+
+        return CompareFileTime(&newerFileData.ftLastWriteTime, &olderFileData.ftLastWriteTime) > 0;
+    }
+}
+
 HRESULT CreateShaderFromFile(const WCHAR* csoFileNameInOut, const WCHAR* hlslFileName, LPCSTR entryPoint, LPCSTR shaderModel, ID3DBlob** ppBlobOut)
 {
     HRESULT hr = S_OK;
 
+    bool shouldUseCachedShader = csoFileNameInOut && !IsFileNewer(hlslFileName, csoFileNameInOut);
+#if defined(DEBUG) || defined(_DEBUG)
+    shouldUseCachedShader = shouldUseCachedShader && !FileExists(hlslFileName);
+#endif
 
-    if (csoFileNameInOut && D3DReadFileToBlob(csoFileNameInOut, ppBlobOut) == S_OK)
+    if (shouldUseCachedShader &&
+        D3DReadFileToBlob(csoFileNameInOut, ppBlobOut) == S_OK)
     {
         return hr;
     }
@@ -33,7 +71,7 @@ HRESULT CreateShaderFromFile(const WCHAR* csoFileNameInOut, const WCHAR* hlslFil
 
         if (csoFileNameInOut)
         {
-            return D3DWriteBlobToFile(*ppBlobOut, csoFileNameInOut, FALSE);;
+            return D3DWriteBlobToFile(*ppBlobOut, csoFileNameInOut, TRUE);
         }
 
     }
