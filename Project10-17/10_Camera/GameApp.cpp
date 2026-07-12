@@ -170,10 +170,10 @@ bool GameApp::InitResources()
 
 
 	WCHAR strFile[40];
-	m_pFireAnims.resize(120);
-	for (int i = 1; i <= 120; i++)
+	m_pFireAnims.resize(60);
+	for (int i = 1; i <= 60; i++)
 	{
-		wsprintf(strFile, L"..\\Texture\\FireAnim\\Fire%03d.bmp", i);
+		wsprintf(strFile, L"..\\Texture\\BoltAnim\\Bolt%03d.bmp", i);
 		HR(CreateWICTextureFromFile(m_pd3dDevice.Get(),strFile,nullptr,m_pFireAnims[static_cast<size_t>(i)-1].GetAddressOf()));
 	}
 
