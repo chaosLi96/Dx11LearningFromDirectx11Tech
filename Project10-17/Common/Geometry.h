@@ -28,6 +28,16 @@ namespace Geometry
 	MeshData<VertexType, IndexType> Create2DShow(const DirectX::XMFLOAT2& center, const DirectX::XMFLOAT2& scale, const DirectX::XMFLOAT4& color = { 1.f,1.f,1.f,1.f });
 	template<class VertexType = VertexPosTex, class IndexType = DWORD>
 	MeshData<VertexType, IndexType> Create2DShow(float centerX = 0.f, float centerY = 0.f, float scaleX = 1.f, float scaleY = 1.f, const DirectX::XMFLOAT4& color = { 1.f,1.f,1.f,1.f });
+
+
+	// 创建一个平面
+	template<class VertexType = VertexPosNormalTex, class IndexType = DWORD>
+	MeshData<VertexType, IndexType> CreatePlane(const DirectX::XMFLOAT2& planeSize,
+		const DirectX::XMFLOAT2& maxTexCoord = { 1.0f, 1.0f }, const DirectX::XMFLOAT4& color = { 1.0f, 1.0f, 1.0f, 1.0f });
+	template<class VertexType = VertexPosNormalTex, class IndexType = DWORD>
+	MeshData<VertexType, IndexType> CreatePlane(float width = 10.0f, float depth = 10.0f, float texU = 1.0f, float texV = 1.0f,
+		const DirectX::XMFLOAT4& color = { 1.0f, 1.0f, 1.0f, 1.0f });
+
 }
 
 
@@ -206,6 +216,44 @@ namespace Geometry
 
 		meshData.indexVec = { 0,1,2,2,3,0 };
 
+		return meshData;
+	}
+
+	template<class VertexType, class IndexType>
+	inline MeshData<VertexType, IndexType> CreatePlane(const DirectX::XMFLOAT2& planeSize,
+		const DirectX::XMFLOAT2& maxTexCoord, const DirectX::XMFLOAT4& color)
+	{
+		return CreatePlane<VertexType, IndexType>(planeSize.x, planeSize.y, maxTexCoord.x, maxTexCoord.y, color);
+	}
+
+	template<class VertexType, class IndexType>
+	inline MeshData<VertexType, IndexType> CreatePlane(float width, float depth, float texU, float texV, const DirectX::XMFLOAT4& color)
+	{
+		using namespace DirectX;
+
+		MeshData<VertexType, IndexType> meshData;
+		meshData.vertexVec.resize(4);
+
+		Internal::VertexData vertexData;
+		UINT vIndex = 0;
+
+		vertexData = { XMFLOAT3(-width / 2, 0.0f, -depth / 2), XMFLOAT3(0.0f, 1.0f, 0.0f),
+			XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), color, XMFLOAT2(0.0f, texV) };
+		Internal::InsertVertexElement(meshData.vertexVec[vIndex++], vertexData);
+
+		vertexData = { XMFLOAT3(-width / 2, 0.0f, depth / 2), XMFLOAT3(0.0f, 1.0f, 0.0f),
+			XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), color, XMFLOAT2(0.0f, 0.0f) };
+		Internal::InsertVertexElement(meshData.vertexVec[vIndex++], vertexData);
+
+		vertexData = { XMFLOAT3(width / 2, 0.0f, depth / 2), XMFLOAT3(0.0f, 1.0f, 0.0f),
+			XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), color, XMFLOAT2(texU, 0.0f) };
+		Internal::InsertVertexElement(meshData.vertexVec[vIndex++], vertexData);
+
+		vertexData = { XMFLOAT3(width / 2, 0.0f, -depth / 2), XMFLOAT3(0.0f, 1.0f, 0.0f),
+			XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), color, XMFLOAT2(texU, texV) };
+		Internal::InsertVertexElement(meshData.vertexVec[vIndex++], vertexData);
+
+		meshData.indexVec = { 0, 1, 2, 2, 3, 0 };
 		return meshData;
 	}
 

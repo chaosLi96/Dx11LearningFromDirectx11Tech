@@ -4,22 +4,32 @@
 #include "d3dApp.h"
 #include "LightHelper.h"
 #include "Geometry.h"
+#include "Camera.h"
+#include <memory>
 
+using namespace DirectX;
 
 class GameApp : public D3DApp
 {
 public:
-
-    struct VSConstantBuffer
+    struct CBChangesEveryDrawing
     {
-        DirectX::XMMATRIX world;
-        DirectX::XMMATRIX view;
-        DirectX::XMMATRIX proj;
-        //没明白这个逆矩阵干啥的
-        DirectX::XMMATRIX worldInvTranspose;
+        XMMATRIX world;
+        XMMATRIX worldInvTranspose;
     };
 
-    struct PSConstantBuffer
+    struct CBChangesEveryFrame
+    {
+        XMMATRIX view;
+        XMFLOAT4 eyePos;
+    };
+
+    struct CBChangesOnResize
+    {
+        XMMATRIX proj;
+    };
+
+    struct CBChangesRarely
     {
         DirectionalLight dirLight[10];
         PointLight pointLight[10];
@@ -29,14 +39,40 @@ public:
         int numPointLight;
         int numSpotLight;
         float pad;
-        DirectX::XMFLOAT4 eyePos;
+    };
+    
+
+    class GameObject
+    {
+    public:
+        GameObject();
+        Transform& GetTransform();
+        const Transform& GetTransform() const;
+
+        template<class VertexType, class IndexType>
+        void SetBuffer(ID3D11Device* device, const Geometry::MeshData<VertexType, IndexType>& meshData);
+
+        void SetTexture(ID3D11ShaderResourceView* texture);
+
+        void Draw(ID3D11DeviceContext* deviceContext);
+
+        void SetDebugObjectName(const std::string& name);
+    private:
+        Transform m_Transform;
+        ComPtr<ID3D11ShaderResourceView>m_pTexture;
+        ComPtr<ID3D11Buffer> m_pVertexBuffer;
+        ComPtr<ID3D11Buffer> m_pIndexBuffer;
+        UINT m_VertexStride;
+        UINT m_IndexCount;
     };
 
-    enum class ShowMode
+    enum class CameraMode
     {
-        WoodCrate = 0,
-        FireAnim
+        FirstPerson,
+        Free
     };
+
+
 
 public:
     GameApp(HINSTANCE hInstance, const std::wstring& windowName, int initWidth, int initHeight);
@@ -50,32 +86,31 @@ private:
     bool InitEffect();
     bool InitResources();
 
-    template<class VertexType>
-    bool ResetMesh(const Geometry::MeshData<VertexType>& meshData);
 
 private:
     ComPtr<ID3D11InputLayout> m_pVertexLayout2D; // 3D顶点输入布局
-    ComPtr<ID3D11InputLayout> m_pVertexLayout3D; // 3D顶点输入布局
-    ComPtr<ID3D11Buffer>m_pVertexBuffer;   //顶点缓冲区
-    ComPtr<ID3D11Buffer> m_pIndexBuffer;     //索引缓冲区
-    ComPtr<ID3D11Buffer> m_pConstantBuffers[2]; //常量缓冲区
-    UINT m_IndexCount;
-    int m_CurrFrame;
-    ShowMode m_CurrMode;
+    ComPtr<ID3D11InputLayout> m_pVertexLayout3D;
+    ComPtr<ID3D11Buffer> m_pConstantBuffers[4];
 
-	ComPtr<ID3D11ShaderResourceView> m_pWoodCrate; //木材纹理
-    std::vector<ComPtr<ID3D11ShaderResourceView>> m_pFireAnims;
-    ComPtr<ID3D11SamplerState> m_pSamplerState;
+    GameObject m_WoodCrate;
+    GameObject m_Floor;
+    std::vector<GameObject> m_Walls;
 
+    ComPtr<ID3D11VertexShader> m_pVertexShader3D;
+    ComPtr<ID3D11VertexShader> m_pVertexShader2D;
 
-	ComPtr<ID3D11VertexShader> m_pVertexShader3D; //顶点着色器
-	ComPtr<ID3D11PixelShader> m_pPixelShader3D; // 像素着色器
-    ComPtr<ID3D11VertexShader> m_pVertexShader2D; //顶点着色器
-    ComPtr<ID3D11PixelShader> m_pPixelShader2D; //像素着色器
+    ComPtr<ID3D11PixelShader> m_pPixelShader3D;
+    ComPtr<ID3D11PixelShader> m_pPixelShader2D;
 
+    CBChangesEveryFrame m_CBFrame;
+    CBChangesOnResize m_CBOnResize;
+    CBChangesRarely m_CBRarely;
 
-    VSConstantBuffer m_VSConstantBuffer;
-    PSConstantBuffer m_PSConstantBuffer;
+    ComPtr<ID3D11SamplerState>m_pSamplerState;
+
+    std::shared_ptr<Camera>m_pCamera;
+    CameraMode m_CameraMode;
+    
 
 };
 

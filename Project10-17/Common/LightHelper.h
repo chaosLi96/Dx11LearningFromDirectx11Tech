@@ -15,7 +15,7 @@ struct DirectionalLight
 
 	DirectionalLight(const DirectX::XMFLOAT4& _ambient,const DirectX::XMFLOAT4 & _diffuse,
 		const DirectX::XMFLOAT4 & _specular, const DirectX::XMFLOAT3 & _direction):
-		ambient(_ambient),diffuse(_diffuse),specular(_specular),direction(_direction){ }
+		ambient(_ambient),diffuse(_diffuse),specular(_specular),direction(_direction),pad(){ }
 
 	DirectX::XMFLOAT4 ambient;
 	DirectX::XMFLOAT4 diffuse;
